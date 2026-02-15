@@ -54,6 +54,17 @@ Cat Café 需要程序化调用三只 AI 猫猫（Claude/Codex/Gemini），并�
 3. `spawnCli()` 工具封装超时、abort、僵尸进程防护
 4. Gemini 双 adapter：`gemini-cli` (headless) 和 `antigravity` (IDE) 互为 fallback
 
+## 否决理由（P0.5 回填）
+
+- **备选方案 A**：继续采用官方 Agent SDK（原 ADR 初稿方向）
+  - 不选原因：SDK 路径绑定 API key 计费，无法复用 Max/Plus/Pro 订阅额度，长期成本不可接受。
+- **备选方案 B**：三猫统一改成纯 API 模式
+  - 不选原因：纯 API 丢失 CLI 侧 agent 能力（文件操作、命令执行、MCP 工具链），与 Cat Café 协作目标冲突。
+- **备选方案 C**：外部独立进程编排（仅保留 D 方案）
+  - 不选原因：进程同步、会话对齐和回传链路复杂度过高，不符合当期交付节奏。
+
+**不做边界**：本轮不引入进程池和统一守护进程优化，启动性能优化留到后续独立议题。
+
 ## 参考
 
 - 研究报告：`research-report/` 目录下的三份报告
