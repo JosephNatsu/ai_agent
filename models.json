@@ -1,0 +1,21 @@
+{
+  "models": [
+    {
+      "alias": "诸葛亮",
+      "description": "内置演示模型",
+      "transport": "mock",
+      "cmd": "",
+      "args": []
+    },
+    {
+      "alias": "孔明",
+      "transport": "arg",
+      "cmd": "codex",
+      "args": [
+        "exec",
+        "--json",
+        "--skip-git-repo-check"
+      ]
+    }
+  ]
+}

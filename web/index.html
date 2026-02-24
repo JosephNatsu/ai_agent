@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>军议台 | 主公与军师</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg-a: #fff6df;
+        --bg-b: #ffd6a5;
+        --bg-c: #ffadad;
+        --ink: #2b2118;
+        --accent: #ff6b35;
+        --accent-2: #2a9d8f;
+        --panel: rgba(255, 252, 245, 0.8);
+        --line: rgba(43, 33, 24, 0.16);
+        --shadow: 0 20px 48px rgba(43, 33, 24, 0.18);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "IBM Plex Sans", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 10% 20%, #fff3cc 0%, transparent 40%),
+          radial-gradient(circle at 85% 0%, #ffcdb2 0%, transparent 38%),
+          linear-gradient(135deg, var(--bg-a), var(--bg-b) 55%, var(--bg-c));
+      }
+
+      .shell {
+        width: min(1160px, 96vw);
+        margin: 18px auto;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 14px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        backdrop-filter: blur(8px);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        animation: rise .45s ease both;
+      }
+
+      .left {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: "Alfa Slab One", serif;
+        letter-spacing: 1px;
+        font-size: 30px;
+        line-height: 1.05;
+      }
+
+      .subtitle {
+        margin: 0;
+        font-size: 13px;
+        opacity: .8;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        border: 1px dashed var(--line);
+        background: rgba(255,255,255,.7);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: .2s ease;
+      }
+
+      .chip:hover {
+        transform: translateY(-2px);
+        border-style: solid;
+      }
+
+      .row { display: grid; gap: 8px; }
+
+      input, select, textarea, button {
+        font: inherit;
+      }
+
+      input, select, textarea {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: rgba(255,255,255,.85);
+        color: var(--ink);
+      }
+
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .btn-main {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .btn-sub {
+        background: var(--accent-2);
+        color: #fff;
+      }
+
+      .right {
+        display: grid;
+        grid-template-rows: 1fr auto;
+        overflow: hidden;
+      }
+
+      .messages {
+        padding: 18px;
+        overflow: auto;
+        min-height: 62vh;
+        max-height: 76vh;
+      }
+
+      .msg {
+        max-width: 88%;
+        margin: 10px 0;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,.86);
+        animation: rise .3s ease both;
+      }
+
+      .msg.user {
+        margin-left: auto;
+        background: #ffe8cc;
+      }
+
+      .msg.assistant {
+        margin-right: auto;
+        background: #e6fff8;
+      }
+
+      .speaker {
+        font-weight: 700;
+        font-size: 12px;
+        opacity: .8;
+        margin-bottom: 4px;
+      }
+
+      .composer {
+        border-top: 1px solid var(--line);
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .composer textarea {
+        width: 100%;
+        min-height: 86px;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .hint {
+        margin-left: auto;
+        font-size: 12px;
+        opacity: .7;
+      }
+
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @media (max-width: 900px) {
+        .shell { grid-template-columns: 1fr; }
+        .messages { min-height: 48vh; max-height: 56vh; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel left">
+        <div>
+          <h1>军议台</h1>
+          <p class="subtitle">主公可 @任意军师，或开启全体协作。</p>
+        </div>
+
+        <div class="row">
+          <strong>军师快捷 @</strong>
+          <div id="chips" class="chips"></div>
+        </div>
+
+        <div class="row">
+          <strong>新增军师（CLI）</strong>
+          <input id="alias" placeholder="代号，例如 奉孝" />
+          <select id="transport">
+            <option value="mock">mock（内置）</option>
+            <option value="stdin">stdin</option>
+            <option value="arg">arg</option>
+          </select>
+          <input id="command" placeholder="命令，例如 ollama run qwen2.5:7b" />
+          <button id="addModel" class="btn-sub">添加/更新军师</button>
+        </div>
+
+        <div class="row">
+          <button id="reset" class="btn-main">清空本次会话</button>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <div id="messages" class="messages"></div>
+        <div class="composer">
+          <textarea id="input" placeholder="输入：@诸葛亮 给我一份执行方案（不@则需勾选全体协作）"></textarea>
+          <div class="actions">
+            <label><input id="collaborate" type="checkbox" /> 全体协作</label>
+            <button id="send" class="btn-main">发起军议</button>
+            <span class="hint">Enter 发送，Shift+Enter 换行</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

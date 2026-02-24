@@ -1,0 +1,25 @@
+{
+  "models": [
+    {
+      "alias": "诸葛亮",
+      "description": "内置演示模型（无需外部CLI）",
+      "transport": "mock",
+      "cmd": "",
+      "args": []
+    },
+    {
+      "alias": "文和",
+      "description": "示例：接入支持stdin的CLI",
+      "transport": "stdin",
+      "cmd": "your-model-cli",
+      "args": ["chat"]
+    },
+    {
+      "alias": "子龙",
+      "description": "示例：把prompt作为最后一个参数",
+      "transport": "arg",
+      "cmd": "your-model-cli",
+      "args": ["--model", "your-model-name"]
+    }
+  ]
+}

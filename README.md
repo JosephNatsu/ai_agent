@@ -55,3 +55,44 @@
 ---
 
 *这个教程由三只猫猫和铲屎官共同编写。*
+
+## 军议 AI 聊天工具（CLI）
+
+已提供一个可运行的多模型军议聊天工具：
+
+- 启动：`python3 src/war_council.py`
+- 点名对话：`@诸葛亮 给我一个三步执行计划`
+- 全体协作：`/c 评估这个需求的风险和排期`
+- 动态添加模型：`/add 奉孝 stdin ollama run qwen2.5:7b`
+- 查看模型：`/models`
+
+模型配置会保存到项目根目录 `models.json`，并默认包含代号“诸葛亮”。
+
+## 军议 AI 聊天工具（Web）
+
+已提供一个前后端打通的 Web 入口：
+
+- 启动服务：`python3 src/server.py`
+- 访问地址：`http://127.0.0.1:8765`
+- 前端能力：
+  - 风格化聊天界面（移动端/桌面端适配）
+  - `@代号` 快捷插入
+  - 全体协作模式开关
+  - 在线添加/更新军师（接入 CLI 模型）
+  - 会话历史展示与清空
+- 后端 API：
+  - `GET /api/models`
+  - `POST /api/models`
+  - `GET /api/history`
+  - `POST /api/chat`
+  - `POST /api/reset`
+
+### 使用 Codex CLI 作为军师
+
+可将 Codex CLI 直接接入为一个军师（无需 OpenAI API key）：
+
+- 代号：`诸葛亮`
+- 传输：`arg`
+- 命令：`codex exec --json`
+
+然后在聊天框里输入：`@诸葛亮 你的问题`
