@@ -1,61 +1,3 @@
-# Cat Café Tutorials
-
-> 从零搭建 AI 猫猫协作系统 — 一个真实项目的完整复盘
-
-## 这是什么
-
-这是 Cat Café 项目的配套教程，记录三只 AI 猫猫（Claude/Codex/Gemini）如何真正协作起来的故事。
-
-**不是**理想化的"从零开始"路径，**而是**还原我们真实走过的路 —— 包括错误的尝试、关键的转折、以及血泪教训。
-
-## 三只猫猫
-
-| 猫猫 | 模型 | 角色 |
-|------|------|------|
-| 布偶猫 | Claude Opus | 主架构师，核心开发 |
-| 缅因猫 | Codex | Code Review，安全，测试 |
-| 暹罗猫 | Gemini | 视觉设计，创意 |
-
-## 教程目录
-
-→ [查看完整教程目录](./docs/lessons/README.md)
-
-### 已完成
-
-- **第一课**：[选型之路 — 从 SDK 到 CLI](./docs/lessons/01-sdk-to-cli.md)
-  - 为什么官方 SDK 行不通？
-  - 决策逻辑链完整还原
-  - [课后作业](./docs/lessons/01-homework.md)：动手写最小可运行示例
-
-### 即将推出
-
-- 第二课：从玩具到生产 — CLI 调用的工程化
-- 第三课：MCP 回传机制 — 让猫猫主动说话
-- ...更多
-
-## 适合谁
-
-- 想让多个 AI Agent 协作的开发者
-- 对 Claude/Codex/Gemini CLI 感兴趣的人
-- 想看真实项目演进过程的人
-- 想避开我们踩过的坑的人
-
-## 项目状态
-
-- 教程：公开（你正在看的）
-- 代码仓库：私有（打磨中）
-- 计划开源时间：待定
-
-## 联系我们
-
-如果你有问题或想交流，欢迎：
-- 提 Issue
-- 关注后续更新
-
----
-
-*这个教程由三只猫猫和铲屎官共同编写。*
-
 ## 军议 AI 聊天工具（CLI）
 
 已提供一个可运行的多模型军议聊天工具：
@@ -86,6 +28,8 @@
   - `GET /api/history`
   - `POST /api/chat`
   - `POST /api/reset`
+  - `GET /api/memory/dates`（按日期查看摘要/话题，支持 `?q=关键词`）
+  - `GET /api/memory/date?date=YYYY-MM-DD`（查看某天完整聊天内容）
 
 ### 使用 Codex CLI 作为军师
 
@@ -96,3 +40,27 @@
 - 命令：`codex exec --json`
 
 然后在聊天框里输入：`@诸葛亮 你的问题`
+
+### 使用 Qwen CLI 作为军师
+
+Qwen 的 `-p` 需要紧跟 prompt，本项目支持 `{prompt}` 占位符：
+
+- 代号：`仲达`
+- 传输：`arg`
+- 命令：`qwen -p {prompt} --output-format stream-json`
+
+系统会自动从 stream-json 中提取最终回答文本（过滤 `thinking/system` 事件）。
+
+## 本地历史记忆（按日期）
+
+系统会把聊天记录按日期持久化到本地：
+
+- 目录：`data/history/`
+- 原始记录：`data/history/YYYY-MM-DD.jsonl`
+- 话题索引与每日摘要：`data/history/index.json`
+
+记忆能力：
+
+- 前端左侧可先按日期查看“当天聊了哪些话题”，再查看该天完整聊天。
+- 支持按关键词检索日期摘要。
+- 后端在构建军师 prompt 时，只注入“最近会话节选 + 相关日期摘要”，减少上下文长度和 token 消耗，同时保留历史可回忆性。

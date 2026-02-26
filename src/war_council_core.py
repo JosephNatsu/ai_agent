@@ -8,6 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 from typing import List, Optional
+try:
+    from history_store import HistoryStore
+except ImportError:
+    from .history_store import HistoryStore
 
 SYSTEM_PROMPT = "\n".join([
     "你正在参加一场军议。",
@@ -20,9 +24,11 @@ SYSTEM_PROMPT = "\n".join([
 class WarCouncil:
     def __init__(self, models_file: Optional[Path] = None):
         self.models_file = models_file or (Path.cwd() / "models.json")
+        self.memory_dir = Path.cwd() / "data" / "history"
         self.lock = Lock()
+        self.store = HistoryStore(self.memory_dir)
         self.models = self._bootstrap_models()
-        self.history = []
+        self.history = self.store.load_today_history()
 
     @staticmethod
     def now_iso() -> str:
@@ -50,19 +56,25 @@ class WarCouncil:
         self.write_json(self.models_file, {"models": models})
         return models
 
-    def render_history(self):
-        if not self.history:
+    def render_history(self, history_items=None):
+        rows = self.history if history_items is None else history_items
+        if not rows:
             return "(暂无历史)"
         lines = []
-        for i, item in enumerate(self.history, start=1):
+        for i, item in enumerate(rows, start=1):
             lines.append(f"{i}. [{item['time']}] {item['speaker']}({item['role']}): {item['text']}")
         return "\n".join(lines)
 
     def build_prompt(self, alias: str, content: str):
+        recent = self.history[-30:]
+        notes = self.store.recall_notes_for_query(content, limit=3)
         return "\n\n".join([
             f"【系统设定】\n{SYSTEM_PROMPT}",
             f"【你的身份】\n你是军师「{alias}」。",
-            f"【完整对话历史】\n{self.render_history()}",
+            "【近期会话（节选）】\n仅展示最近30条消息，避免上下文过长。",
+            self.render_history(recent),
+            "【往日相关记忆（按日期摘要）】\n如与当前问题相关，可据此回忆历史决策。",
+            notes or "(暂无历史摘要)",
             f"【本轮主公问题】\n{content}",
             "请直接给出回答。",
         ])
@@ -96,7 +108,10 @@ class WarCouncil:
         run_args = [cmd] + args
         stdin_data = None
         if transport == "arg":
-            run_args.append(prompt)
+            if "{prompt}" in run_args:
+                run_args = [prompt if token == "{prompt}" else token for token in run_args]
+            else:
+                run_args.append(prompt)
         elif transport == "stdin":
             stdin_data = prompt
         else:
@@ -112,9 +127,7 @@ class WarCouncil:
             )
         except FileNotFoundError:
             # Fallback: try resolving command through login shell PATH.
-            shell_cmd = " ".join(shlex.quote(x) for x in [cmd] + args)
-            if transport == "arg":
-                shell_cmd = f"{shell_cmd} {shlex.quote(prompt)}"
+            shell_cmd = " ".join(shlex.quote(x) for x in run_args)
             proc = subprocess.run(
                 ["/bin/zsh", "-lc", shell_cmd],
                 input=stdin_data if transport == "stdin" else None,
@@ -164,7 +177,17 @@ class WarCouncil:
             if text:
                 pieces.append(text)
 
-        cleaned = "\n".join([p for p in pieces if p.strip()]).strip()
+        # Keep order but remove duplicates commonly seen in stream-json + final result events.
+        seen = set()
+        deduped = []
+        for p in pieces:
+            t = p.strip()
+            if not t or t in seen:
+                continue
+            seen.add(t)
+            deduped.append(t)
+
+        cleaned = "\n".join(deduped).strip()
         return cleaned or out
 
     def _extract_text_from_json_obj(self, obj):
@@ -186,6 +209,16 @@ class WarCouncil:
                 return self._stringify_text_value(obj.get("delta") or obj.get("text") or obj.get("output_text"))
             if event_type in {"thread.started", "turn.started", "turn.completed"}:
                 return ""
+            # Qwen stream-json events
+            if event_type == "assistant":
+                message = obj.get("message")
+                if isinstance(message, dict):
+                    return self._extract_message_content_text(message)
+                return ""
+            if event_type == "result":
+                return self._stringify_text_value(obj.get("result"))
+            if event_type == "system":
+                return ""
 
         candidates = []
         preferred_keys = ["output_text", "text", "message", "content", "delta", "result", "output", "final"]
@@ -200,6 +233,26 @@ class WarCouncil:
             return "\n".join(candidates).strip()
 
         return ""
+
+    def _extract_message_content_text(self, message):
+        content = message.get("content")
+        if not isinstance(content, list):
+            return ""
+
+        parts = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("type")
+            if item_type == "text":
+                text = self._stringify_text_value(item.get("text"))
+                if text:
+                    parts.append(text)
+            # Explicitly ignore thinking blocks from providers like Qwen/Codex.
+            if item_type == "thinking":
+                continue
+
+        return "\n".join(parts).strip()
 
     def _stringify_text_value(self, value):
         if value is None:
@@ -233,6 +286,18 @@ class WarCouncil:
     def get_history(self):
         with self.lock:
             return list(self.history)
+
+    def get_date_history(self, date_str: str):
+        with self.lock:
+            return self.store.load_date_history(date_str)
+
+    def list_memory_dates(self):
+        with self.lock:
+            return self.store.list_dates()
+
+    def search_memory_dates(self, query: str):
+        with self.lock:
+            return self.store.search_dates(query)
 
     def reset_history(self):
         with self.lock:
@@ -309,5 +374,8 @@ class WarCouncil:
                 message = {"role": "assistant", "speaker": alias, "text": reply_text, "time": self.now_iso()}
                 self.history.append(message)
                 replies.append(message)
+
+            persisted = [self.history[-(1 + len(replies))]] + replies
+            self.store.append_messages(persisted)
 
         return {"input": content, "replies": replies, "history": self.get_history()}

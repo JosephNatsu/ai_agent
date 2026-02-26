@@ -1,20 +1,70 @@
 {
   "models": [
     {
-      "alias": "诸葛亮",
-      "description": "内置演示模型",
-      "transport": "mock",
-      "cmd": "",
-      "args": []
-    },
-    {
       "alias": "孔明",
+      "description": "codex",
       "transport": "arg",
       "cmd": "codex",
       "args": [
         "exec",
         "--json",
         "--skip-git-repo-check"
+      ]
+    },
+    {
+      "alias": "徐庶",
+      "description": "qwen3.5",
+      "transport": "arg",
+      "cmd": "qwen",
+      "args": [
+        "-p",
+        "{prompt}",
+        "-m",
+        "qwen3.5-plus",
+        "--output-format",
+        "stream-json"
+      ]
+    },
+    {
+      "alias": "法正",
+      "description": "glm-5",
+      "transport": "arg",
+      "cmd": "qwen",
+      "args": [
+        "-p",
+        "{prompt}",
+        "-m",
+        "glm-5",
+        "--output-format",
+        "stream-json"
+      ]
+    },
+    {
+      "alias": "荀彧",
+      "description": "MiniMax-M2.5",
+      "transport": "arg",
+      "cmd": "qwen",
+      "args": [
+        "-p",
+        "{prompt}",
+        "-m",
+        "MiniMax-M2.5",
+        "--output-format",
+        "stream-json"
+      ]
+    },
+    {
+      "alias": "程昱",
+      "description": "kimi-k2.5",
+      "transport": "arg",
+      "cmd": "qwen",
+      "args": [
+        "-p",
+        "{prompt}",
+        "-m",
+        "kimi-k2.5",
+        "--output-format",
+        "stream-json"
       ]
     }
   ]

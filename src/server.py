@@ -2,7 +2,7 @@
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 import shlex
 
 from war_council_core import WarCouncil
@@ -64,6 +64,22 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/history":
             self._send_json({"history": council.get_history()})
+            return
+
+        if path == "/api/memory/dates":
+            query = parse_qs(parsed.query).get("q", [""])[0]
+            if query:
+                self._send_json({"dates": council.search_memory_dates(query)})
+            else:
+                self._send_json({"dates": council.list_memory_dates()})
+            return
+
+        if path == "/api/memory/date":
+            date_value = parse_qs(parsed.query).get("date", [""])[0]
+            if not date_value:
+                self._send_json({"error": "缺少 date 参数"}, status=400)
+                return
+            self._send_json({"date": date_value, "history": council.get_date_history(date_value)})
             return
 
         if path == "/":
