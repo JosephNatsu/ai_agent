@@ -7,8 +7,10 @@
       "cmd": "codex",
       "args": [
         "exec",
+        "{prompt}",
         "--json",
-        "--skip-git-repo-check"
+        "--skip-git-repo-check",
+        "--full-auto"
       ]
     },
     {

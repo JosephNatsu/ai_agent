@@ -1,0 +1,61 @@
+name: Validate Advisor Sign
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: ["**"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit message trailers
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RANGE="origin/${{ github.base_ref }}..HEAD"
+            git fetch origin "${{ github.base_ref }}" --depth=1
+          else
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.sha }}"
+            if [[ "$BEFORE" == "0000000000000000000000000000000000000000" ]]; then
+              RANGE="$AFTER"
+            else
+              RANGE="$BEFORE..$AFTER"
+            fi
+          fi
+
+          COMMITS=$(git rev-list "$RANGE" || true)
+          if [[ -z "$COMMITS" ]]; then
+            echo "No commits to validate."
+            exit 0
+          fi
+
+          FAIL=0
+          for c in $COMMITS; do
+            MSG=$(git log -1 --pretty=%B "$c")
+            if ! grep -Eq '^Advisor:[[:space:]]*\S.+' <<<"$MSG"; then
+              echo "::error::Commit $c missing 'Advisor: <军师名>'"
+              FAIL=1
+            fi
+          done
+
+          exit $FAIL
+
+      - name: Validate PR body advisor line
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BODY='${{ github.event.pull_request.body }}'
+          if ! grep -Eq '^军师：[[:space:]]*\S.+' <<<"$BODY"; then
+            echo "::error::PR description must include: 军师：<军师名>"
+            exit 1
+          fi

@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+set -eu
+
+MSG_FILE="$1"
+
+if ! grep -Eq '^Advisor:[[:space:]]*\S.+' "$MSG_FILE"; then
+  cat >&2 <<'EOM'
+ERROR: commit message must include advisor identity.
+
+Required line:
+  Advisor: <军师名>
+
+Example:
+  feat: add advisor validation
+
+  Advisor: 孔明
+EOM
+  exit 1
+fi
